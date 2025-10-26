@@ -1,10 +1,28 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import reactLogo from "./assets/react.svg";
+import viteLogo from "/vite.svg";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
+
+  const [status, setStatus] = useState<string>("loading...");
+
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch("/api/health");
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        setStatus(data.status || "unknown");
+      } catch (error) {
+        console.error(error);
+        setStatus("error");
+      }
+    };
+
+    fetchHealth();
+  }, []);
 
   return (
     <>
@@ -28,8 +46,12 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
+
+      <div style={{ marginTop: "1rem" }}>
+        <strong>API Health Check:</strong> {status}
+      </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

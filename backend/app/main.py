@@ -1,18 +1,30 @@
-# app/main.py
 from fastapi import FastAPI
-from .db import Base, engine  # Base に 全モデルが import 済みであることが重要
-from . import models  # ← これでモデルを登録
+from fastapi.middleware.cors import CORSMiddleware
+from .db import Base, engine
+from .routers import memories, quizzes, alarms
+import os
 
-app = FastAPI()
+app = FastAPI(title="Memory Alarm API")
 
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=engine)  # 開発用: 無ければ作る
+# CORS
+origins_env = os.getenv("BACKEND_CORS_ORIGINS")
+origins = (origins_env.split(",") if origins_env else ["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/")
-def read_root():
-    return {"Hello" : "World"}
+# MVP: 起動時にテーブル作成（本番は Alembic 推奨）
+Base.metadata.create_all(bind=engine)
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id" : item_id, "q": q}
+# ルーター
+app.include_router(memories.router)
+app.include_router(quizzes.router)
+app.include_router(alarms.router)
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
